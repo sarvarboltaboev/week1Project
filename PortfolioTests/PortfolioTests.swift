@@ -37,3 +37,49 @@ final class PortfolioTests: XCTestCase {
         XCTAssertEqual(hintOffset(at: 1.6 + 0.1), 0)
     }
 }
+
+final class PocketsSpecTests: XCTestCase {
+    func testCardMetrics() {
+        XCTAssertEqual(CardMetrics.expandedHeight, 486)
+        XCTAssertEqual(CardMetrics.collapsedHeight, 190)
+        XCTAssertEqual(CardMetrics.collapseRange, 296)
+        XCTAssertEqual(CardMetrics.expandedHeight(compare: true), 543)
+        XCTAssertEqual(CardMetrics.collapseRange(compare: true), 353)
+    }
+
+    func testPeriodChange() {
+        let now = Date()
+        let series = [100.0, 90, 101.08].map { ChartPoint(date: now, value: $0) }
+        let change = periodChange(series)
+        XCTAssertEqual(change.delta, 1.08, accuracy: 1e-9)
+        XCTAssertEqual(change.percent, 1.08, accuracy: 1e-9)
+        XCTAssertEqual(periodChange([]).delta, 0)
+        XCTAssertEqual(periodChange(Array(series.prefix(1))).percent, 0)
+    }
+
+    func testMoneyMasking() {
+        XCTAssertEqual(money(12_480.55, visible: true), "$12,480.55")
+        XCTAssertEqual(money(-3.1, "€", visible: true), "-€3.10")
+        XCTAssertEqual(money(12_480.55, visible: false), "••••")
+    }
+
+    func testSelectResetsCardTab() {
+        let model = PocketsHomeModel()
+        model.setCardTab(1)
+        model.select("tech")
+        XCTAssertEqual(model.activeCardTab, 0)
+        XCTAssertEqual(model.selectedTabID, "tech")
+    }
+
+    func testDummyDataShape() {
+        let tabs = DummyData.tabs()
+        XCTAssertEqual(tabs.map(\.id), ["all", "cash", "growth", "tech", "halal"])
+        for period in DummyData.periods {
+            let series = tabs[0].card.seriesByPeriod[period] ?? []
+            XCTAssert((30...90).contains(series.count), period)
+            XCTAssertEqual(series.last?.value ?? 0, 12_480.55, accuracy: 1e-6)
+        }
+        XCTAssertFalse(tabs[1].hasHoldings)
+        XCTAssertFalse(tabs[4].hasHoldings)
+    }
+}

@@ -4,7 +4,7 @@ import SwiftUI
 struct PortfolioApp: App {
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            PocketsHomeView()
         }
     }
 }

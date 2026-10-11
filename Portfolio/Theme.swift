@@ -12,16 +12,24 @@ extension Color {
         )
     }
 
-    static let textPrimary = Color.black
-    static let textSecondary = Color(hex: 0x161D35, alpha: 0.4)
+    /// Resolves per trait, so every token follows light/dark mode.
+    init(light: Color, dark: Color) {
+        self.init(uiColor: UIColor { $0.userInterfaceStyle == .dark ? UIColor(dark) : UIColor(light) })
+    }
+
+    static let textPrimary = Color(light: .black, dark: .white)
+    static let textSecondary = Color(light: Color(hex: 0x161D35, alpha: 0.4), dark: Color.white.opacity(0.5))
     static let textAccent = Color(hex: 0x7DC023)
     static let textAlert = Color(hex: 0xEA2924)
     static let textWarning = Color(hex: 0xD76D16)
-    static let borderPrimary = Color.black.opacity(0.1)
-    static let surfaceGrey20 = Color(hex: 0xF5F6F9)
-    static let surfaceGrey30 = Color(hex: 0xE9EBF0)
+    static let benchmarkLine = Color(hex: 0x4E7CF6)
+    static let borderPrimary = Color(light: Color.black.opacity(0.1), dark: Color.white.opacity(0.15))
+    static let surfaceGrey20 = Color(light: Color(hex: 0xF5F6F9), dark: Color(hex: 0x2C2C2E))
+    static let surfaceGrey30 = Color(light: Color(hex: 0xE9EBF0), dark: Color(hex: 0x1C1C1E))
     static let surfaceOrange30 = Color(hex: 0xFDB980)
-    static let navbarBackground = Color.white.opacity(0.9)
+    /// Card surface; the ground blends into it as the card collapses.
+    static let card = Color(light: .white, dark: .black)
+    static let navbarBackground = card.opacity(0.9)
 }
 
 // ponytail: system font stands in for Inter; bundle Inter .ttf if pixel parity matters.
