@@ -31,3 +31,16 @@ struct Activity: Identifiable, Hashable {
     let amount: Decimal
     let time: String
 }
+
+extension Decimal {
+    /// "1 245.68": space-grouped, two decimals, as the design prints money.
+    var spaced: String {
+        formatted(.number.precision(.fractionLength(2)).locale(Locale(identifier: "en_US")))
+            .replacingOccurrences(of: ",", with: " ")
+    }
+}
+
+extension Double {
+    /// "+10.85%" / "-2.85%".
+    var signedPercent: String { String(format: "%+.2f%%", self) }
+}
