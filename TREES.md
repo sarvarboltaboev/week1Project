@@ -1,5 +1,7 @@
 # Home screen trees
 
+> Snapshot of step 6 (`HomeView`, `PocketCard`, `PortfolioStore`). Step 7 renamed these to `PocketsHomeView`, `PocketCardView`, `PocketsHomeModel`; the tree shape and hotspots still apply.
+
 The portfolio home screen (`HomeView`) as implemented, drawn as SwiftUI's three layers, with the state that drives re-evaluation marked on each.
 
 | Flutter term | SwiftUI equivalent used here |

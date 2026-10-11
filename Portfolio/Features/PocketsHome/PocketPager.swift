@@ -5,28 +5,30 @@ func pageProgress(offset: CGFloat, width: CGFloat) -> CGFloat {
     width > 0 ? min(abs(offset) / width, 1) : 0
 }
 
-/// Horizontal pager over pocket cards. Presentational: reports the settled page, never writes selection mid-scroll.
-struct PocketCarousel: View {
-    let pockets: [Pocket]
-    let selectedID: Pocket.ID
-    var collapse: CGFloat = 0
-    let onSettle: (Pocket.ID) -> Void
+/// Horizontal pager, one card per tab. Presentational: reports the settled page, never writes selection mid-scroll.
+struct PocketPager<Card: View>: View {
+    let tabs: [PocketTab]
+    let selectedID: String
+    let collapse: CGFloat
+    let onSettle: (String) -> Void
+    /// Builds a tab's card; the closure reports whether a finger is down on its chart.
+    @ViewBuilder let card: (PocketTab, @escaping (Bool) -> Void) -> Card
 
-    // Local, so programmatic scrolls passing intermediate pages never reach the store.
-    @State private var position: Pocket.ID?
+    // Local, so programmatic scrolls passing intermediate pages never reach the model.
+    @State private var position: String?
     @State private var chartHeld = false
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            // ponytail: cards share PocketCard's height (fixed per collapse), so the pager is just as tall; top alignment
-            // keeps it correct if a card ever gets shorter. Measure max card height if heights become dynamic.
+            // Top-aligned: a neighbour without the compare block is shorter than the selected card.
             LazyHStack(alignment: .top, spacing: 0) {
-                ForEach(pockets) { pocket in
-                    PocketCard(pocket: pocket, collapse: collapse, onChartHeld: { chartHeld = $0 })
-                        .padding(.horizontal, lerp(12, 0, collapse))
+                ForEach(tabs) { tab in
+                    card(tab) { chartHeld = $0 }
+                        .padding(.horizontal, lerp(CardMetrics.margin, 0, collapse))
+                        // One layer, so the fade doesn't let overlapping subviews show through.
+                        .compositingGroup()
                         .containerRelativeFrame(.horizontal)
                         // Runs per frame off the scroll offset: no body re-evaluation, no animation.
-                        // SwiftUI opacity fades the composited layer, so overlapping subviews don't show through.
                         .visualEffect { content, proxy in
                             let t = pageProgress(offset: proxy.frame(in: .scrollView).minX, width: proxy.size.width)
                             return content.scaleEffect(1 - 0.08 * t).opacity(1 - 0.4 * t)
