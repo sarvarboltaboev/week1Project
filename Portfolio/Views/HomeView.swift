@@ -8,11 +8,7 @@ struct HomeView: View {
         ScrollView {
             VStack(spacing: 0) {
                 toolbar
-                // Step 3 swaps this for a horizontal pager over `store.pockets`.
-                if let pocket = store.pockets.first(where: { $0.id == store.selectedPocketID }) {
-                    PocketCard(pocket: pocket)
-                        .padding(.horizontal, 12)
-                }
+                PocketCarousel(pockets: store.pockets, selectedID: store.selectedPocketID, onSettle: store.select)
                 pocketChips.padding(.top, 22)
                 actions.padding(.top, 31)
                 HoldingsSection(holdings: store.holdings)
