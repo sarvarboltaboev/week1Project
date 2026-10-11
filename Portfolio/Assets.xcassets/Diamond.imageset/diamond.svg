@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Component 19">
+<path id="Intersect" d="M18 6L20.4 10.8H12V6H18Z" fill="#8AF1FF"/>
+<path id="Intersect_2" d="M20.4 10.7998L12 17.9998V10.7998H20.4Z" fill="#00DCF9"/>
+<path id="Intersect_3" d="M11.9996 10.7998V17.9998L3.59961 10.7998H11.9996Z" fill="#0DB3C9"/>
+<path id="Intersect_4" d="M11.9996 6V10.8H3.59961L5.99961 6H11.9996Z" fill="#00DCF9"/>
+<path id="Star 1" d="M5 0L6.03238 3.96762L10 5L6.03238 6.03238L5 10L3.96762 6.03238L0 5L3.96762 3.96762L5 0Z" fill="#FFF23E" fill-opacity="0.99"/>
+<path id="Star 2" opacity="0" d="M18 13L18.413 14.587L20 15L18.413 15.413L18 17L17.587 15.413L16 15L17.587 14.587L18 13Z" fill="#FFF23E" fill-opacity="0.99"/>
+</g>
+</svg>
