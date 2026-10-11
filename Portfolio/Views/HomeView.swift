@@ -5,6 +5,7 @@ struct HomeView: View {
     @State private var store = PortfolioStore()
     @State private var scrollY: CGFloat = 0
     @State private var toolbarHeight: CGFloat = 0
+    @AppStorage("didSeeSwipeHint") private var didSeeSwipeHint = false
 
     /// How far the card has been pushed past the viewport top; it pins there by offsetting down by this much.
     private var pin: CGFloat { max(0, scrollY - toolbarHeight) }
@@ -53,6 +54,15 @@ struct HomeView: View {
         // Grey above the content (status bar, pull-down), white below for bottom bounce.
         .background { VStack(spacing: 0) { pageGrey; Color.white }.ignoresSafeArea() }
         .safeAreaInset(edge: .bottom, spacing: 0) { tabBar }
+        // SwiftUI has no backdrop sigma; blurring the content itself matches Flutter's blur(4) far closer than
+        // .ultraThinMaterial, which smears the screen beyond recognition.
+        .blur(radius: didSeeSwipeHint ? 0 : 4)
+        // After safeAreaInset so the hint also covers the tab bar.
+        .overlay {
+            if !didSeeSwipeHint {
+                SwipeHintOverlay { withAnimation { didSeeSwipeHint = true } }.transition(.opacity)
+            }
+        }
     }
 
     private var toolbar: some View {
