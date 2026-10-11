@@ -1,0 +1,6 @@
+*.xcodeproj/
+DerivedData/
+build/
+.DS_Store
+xcuserdata/
+.hunk-context.json
