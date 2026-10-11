@@ -59,8 +59,6 @@ struct PocketCardView: View {
     var onDetails: () -> Void = {}
     var onChartHeld: (Bool) -> Void = { _ in }
 
-    @GestureState private var scrub: Int?
-
     private var period: String { DummyData.periods[periodIndex] }
     private var series: [ChartPoint] { card.seriesByPeriod[period] ?? [] }
     private var showsCompare: Bool { card.kind == .valueChart && activeTab == 1 }
@@ -157,18 +155,18 @@ struct PocketCardView: View {
     }
 
     private var valueRow: some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .center) {
             Text(money(card.value, visible: isBalanceVisible))
                 .font(.system(size: 32, weight: .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+            Spacer()
             Button(action: onToggleBalance) {
                 Image(systemName: isBalanceVisible ? "eye" : "eye.slash")
                     .font(.system(size: 18, weight: .medium))
                     .frame(width: 24, height: 24)
             }
             .buttonStyle(.plain)
-            Spacer(minLength: 0)
         }
     }
 
@@ -196,53 +194,18 @@ struct PocketCardView: View {
         }
     }
 
-    private var chart: some View {
-        let bench = benchmark.map { DummyData.benchmark($0, like: series) } ?? []
-        return Chart {
-            ForEach(Array(series.enumerated()), id: \.offset) { _, point in
-                LineMark(x: .value("Date", point.date), y: .value("Value", point.value), series: .value("Series", "Pocket"))
-                    .foregroundStyle(Color.textAccent)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
-            }
-            ForEach(Array(bench.enumerated()), id: \.offset) { _, point in
-                LineMark(x: .value("Date", point.date), y: .value("Value", point.value), series: .value("Series", "Benchmark"))
-                    .foregroundStyle(Color.benchmarkLine)
-                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-            }
-            if let scrub, series.indices.contains(scrub) {
-                RuleMark(x: .value("Date", series[scrub].date))
-                    .foregroundStyle(Color.textSecondary)
-                    .annotation(position: .top, overflowResolution: .init(x: .fit, y: .fit)) {
-                        VStack(spacing: 0) {
-                            Text(money(series[scrub].value, visible: isBalanceVisible)).font(.captionM)
-                            Text(series[scrub].date, format: .dateTime.month().day()).font(.captionS)
-                                .foregroundStyle(Color.textSecondary)
-                        }
-                    }
-            }
+    @ViewBuilder private var chart: some View {
+        // Tooltip top sits just under the value row, over the change row.
+        let tooltipTop = -(CardMetrics.change + CardMetrics.gap)
+        // Separate view types, so switching Value/Performance drops any selection.
+        if activeTab == 0 {
+            ValueLineChartView(points: series, lineColor: trendColor(series), isMasked: !isBalanceVisible,
+                               tooltipTop: tooltipTop, onScrubChanged: onChartHeld)
+        } else {
+            PerformanceChartView(portfolio: percentSeries(series),
+                                 benchmark: benchmark.map { percentSeries(DummyData.benchmark($0, like: series)) },
+                                 benchmarkColor: .benchmarkLine, tooltipTop: tooltipTop, onScrubChanged: onChartHeld)
         }
-        .chartXAxis(.hidden)
-        .chartYScale(domain: .automatic(includesZero: false))
-        .chartYAxis {
-            AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { _ in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 1)).foregroundStyle(Color.borderPrimary)
-                AxisValueLabel().font(.captionS).foregroundStyle(Color.textSecondary)
-            }
-        }
-        // Scrubber: press-and-hold, then drag. A quick swipe fails the long press, so the outer vertical scroll
-        // (and the pager) still move when a drag starts on the chart. GestureState resets on cancel too.
-        .chartOverlay { proxy in
-            Color.clear.contentShape(.rect).gesture(
-                LongPressGesture(minimumDuration: 0.2)
-                    .sequenced(before: DragGesture(minimumDistance: 0))
-                    .updating($scrub) { value, scrub, _ in
-                        guard case .second(true, let drag?) = value,
-                              let date = proxy.value(atX: drag.location.x, as: Date.self) else { return }
-                        scrub = series.indices.min { abs(series[$0].date.timeIntervalSince(date)) < abs(series[$1].date.timeIntervalSince(date)) }
-                    }
-            )
-        }
-        .onChange(of: scrub != nil) { _, held in onChartHeld(held) }
     }
 
     private var pills: some View {

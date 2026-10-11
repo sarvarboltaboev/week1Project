@@ -4,7 +4,7 @@ enum PocketTabKind { case all, cash, managed, pocket }
 enum PocketCardKind { case valueChart, cashBalance, promo }
 enum BadgeLevel { case low, medium, high }
 
-struct ChartPoint { let date: Date; let value: Double }
+struct ChartPoint: Equatable { let date: Date; let value: Double }
 
 struct CashRow { let title: String; let value: Double; let currencySymbol: String }
 
@@ -54,6 +54,12 @@ struct ActivityRow: Identifiable {
 func periodChange(_ series: [ChartPoint]) -> (delta: Double, percent: Double) {
     guard let first = series.first?.value, let last = series.last?.value, series.count > 1, first != 0 else { return (0, 0) }
     return (last - first, (last - first) / first * 100)
+}
+
+/// Each point as % change from the first: the Performance series.
+func percentSeries(_ series: [ChartPoint]) -> [ChartPoint] {
+    guard let first = series.first?.value, first != 0 else { return [] }
+    return series.map { ChartPoint(date: $0.date, value: ($0.value / first - 1) * 100) }
 }
 
 /// "$12,480.55", or "••••" while the balance is hidden.

@@ -172,12 +172,11 @@ struct PocketsHomeView: View {
     private var tabBar: some View {
         HStack(spacing: 0) {
             ForEach(
-                [("Home", "house"), ("Watchlist", "star.square"), ("Invest", "chart.bar"),
-                 ("Insights", "text.below.photo"), ("Activity", "clock.arrow.circlepath")],
-                id: \.0
-            ) { title, icon in
+                ["Home", "Watchlist", "Invest", "Insights", "Activity"], id: \.self
+            ) { title in
                 VStack(spacing: 4) {
-                    Image(systemName: icon).font(.system(size: 18, weight: .medium)).frame(width: 24, height: 24)
+                    // Figma tab icons (Component 14), template-rendered so they take the label colour.
+                    Image("Tab" + title).resizable().frame(width: 24, height: 24)
                     Text(title).font(.captionS)
                 }
                 .foregroundStyle(title == "Home" ? Color.textPrimary : Color.textSecondary)

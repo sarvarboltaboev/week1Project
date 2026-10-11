@@ -64,11 +64,13 @@ enum DummyData {
     ]
 
     /// Benchmark line over the same dates as `series`, starting at its first value so the two compare.
+    /// Every 7th point is missing, to exercise the tooltip's "--" gap.
     /// ponytail: deterministic sine wave per name, swap for real index data later.
     static func benchmark(_ name: String, like series: [ChartPoint]) -> [ChartPoint] {
         guard let first = series.first?.value else { return [] }
         let k = Double(benchmarks.firstIndex(of: name) ?? 0) + 1
-        return series.enumerated().map { i, point in
+        return series.enumerated().compactMap { i, point in
+            guard i % 7 != 6 else { return nil }
             let x = Double(i) / Double(max(series.count - 1, 1))
             return ChartPoint(date: point.date, value: first * (1 + 0.04 * x * k / 2 + 0.015 * sin(x * 9 * k)))
         }
@@ -84,9 +86,10 @@ enum DummyData {
         return spans.mapValues { walk(endingAt: value, days: $0) }
     }
 
-    /// Gentle random walk of 30–90 points spread over `days`, scaled so the last point equals `value`.
+    /// Gentle random walk of 60 points spread over `days`, scaled so the last point equals `value`.
     private static func walk(endingAt value: Double, days: Double) -> [ChartPoint] {
-        let count = Int.random(in: 30...90)
+        // Fixed count, so a period switch morphs point-to-point.
+        let count = 60
         var v = 1.0
         let raw = (0..<count).map { _ in
             v *= 1 + Double.random(in: -0.012...0.014)

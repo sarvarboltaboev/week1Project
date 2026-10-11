@@ -22,10 +22,11 @@ extension Color {
     static let textAccent = Color(hex: 0x7DC023)
     static let textAlert = Color(hex: 0xEA2924)
     static let textWarning = Color(hex: 0xD76D16)
-    static let benchmarkLine = Color(hex: 0x4E7CF6)
+    static let benchmarkLine = Color(hex: 0xE7CE68)
     static let borderPrimary = Color(light: Color.black.opacity(0.1), dark: Color.white.opacity(0.15))
     static let surfaceGrey20 = Color(light: Color(hex: 0xF5F6F9), dark: Color(hex: 0x2C2C2E))
     static let surfaceGrey30 = Color(light: Color(hex: 0xE9EBF0), dark: Color(hex: 0x1C1C1E))
+    static let surfaceGrey60 = Color(hex: 0x9599A6)
     static let surfaceOrange30 = Color(hex: 0xFDB980)
     /// Card surface; the ground blends into it as the card collapses.
     static let card = Color(light: .white, dark: .black)

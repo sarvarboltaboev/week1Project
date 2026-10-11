@@ -82,4 +82,19 @@ final class PocketsSpecTests: XCTestCase {
         XCTAssertFalse(tabs[1].hasHoldings)
         XCTAssertFalse(tabs[4].hasHoldings)
     }
+
+    func testSnapIndex() {
+        let xs: [CGFloat?] = [10, 50, nil, 130]
+        XCTAssertEqual(snapIndex(45, positions: xs), 1)
+        XCTAssertEqual(snapIndex(74, positions: xs), 1)        // exactly 24pt away still snaps
+        XCTAssertNil(snapIndex(90, positions: xs))             // nearest is 40pt away
+        XCTAssertEqual(snapIndex(112, positions: xs), 3)       // the gap at 90 is skipped
+        XCTAssertNil(snapIndex(0, positions: []))
+    }
+
+    func testTooltipLeading() {
+        XCTAssertEqual(tooltipLeading(center: 150, width: 100, plotWidth: 300), 100)  // centred on finger
+        XCTAssertEqual(tooltipLeading(center: 10, width: 100, plotWidth: 300), 0)     // pinned to left edge
+        XCTAssertEqual(tooltipLeading(center: 290, width: 100, plotWidth: 300), 200)  // pinned to right edge
+    }
 }
