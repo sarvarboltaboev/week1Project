@@ -5,7 +5,9 @@ import SwiftUI
 /// so it can be dropped into a horizontal pager as-is.
 struct PocketCard: View {
     let pocket: Pocket
+    var onChartHeld: (Bool) -> Void = { _ in }
     @State private var tab = 0
+    @State private var scrub: Int?
     @State private var range = "1W"
 
     private static let ranges = ["1W", "MTD", "1M", "3M", "YTD", "1Y", "All"]
@@ -81,10 +83,20 @@ struct PocketCard: View {
 
     private var chart: some View {
         VStack(spacing: 18) {
-            Chart(Array(pocket.history.enumerated()), id: \.offset) { point in
-                LineMark(x: .value("Day", point.offset), y: .value("Value", point.element))
-                    .foregroundStyle(Color.textAccent)
-                    .lineStyle(StrokeStyle(lineWidth: 1.5))
+            Chart {
+                ForEach(Array(pocket.history.enumerated()), id: \.offset) { point in
+                    LineMark(x: .value("Day", point.offset), y: .value("Value", point.element))
+                        .foregroundStyle(Color.textAccent)
+                        .lineStyle(StrokeStyle(lineWidth: 1.5))
+                }
+                if let scrub {
+                    RuleMark(x: .value("Day", scrub))
+                        .foregroundStyle(Color.textSecondary)
+                        .annotation(position: .top, overflowResolution: .init(x: .fit, y: .fit)) {
+                            Text(pocket.history[scrub], format: .number.precision(.fractionLength(2)))
+                                .font(.captionS)
+                        }
+                }
             }
             .chartXAxis(.hidden)
             // ponytail: fixed 0…3K scale and labels as in Figma; derive from history once real data lands.
@@ -95,6 +107,21 @@ struct PocketCard: View {
                 }
             }
             .frame(height: 139)
+            // Scrubber: touch-down immediately claims the gesture and tells the pager to stop paging.
+            .chartOverlay { proxy in
+                Color.clear.contentShape(.rect).gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { drag in
+                            scrub = proxy.value(atX: drag.location.x, as: Int.self)
+                                .map { min(max($0, 0), pocket.history.count - 1) }
+                            onChartHeld(true)
+                        }
+                        .onEnded { _ in
+                            scrub = nil
+                            onChartHeld(false)
+                        }
+                )
+            }
             // Labels sit 3pt above each gridline, overlapping the plot as in Figma; Charts' .inset preset drops the top one.
             .overlay(alignment: .topTrailing) {
                 VStack(alignment: .trailing, spacing: 56) {
