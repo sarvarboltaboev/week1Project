@@ -28,4 +28,12 @@ final class PortfolioTests: XCTestCase {
         XCTAssertEqual(bodyOpacity(1 / 1.8), 0, accuracy: 1e-9)
         XCTAssertEqual(bodyOpacity(1), 0)
     }
+
+    func testHintOffset() {
+        XCTAssertEqual(hintOffset(at: 0), 0)
+        XCTAssertEqual(hintOffset(at: 0.35 * 1.6), 0)
+        XCTAssertEqual(hintOffset(at: 1.6 - 1e-9), -79, accuracy: 1e-3)
+        XCTAssertEqual(hintOffset(at: 0.675 * 1.6), -39.5, accuracy: 1e-3)
+        XCTAssertEqual(hintOffset(at: 1.6 + 0.1), 0)
+    }
 }
