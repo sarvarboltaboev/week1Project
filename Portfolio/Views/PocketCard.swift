@@ -1,20 +1,37 @@
 import Charts
 import SwiftUI
 
+func lerp(_ a: CGFloat, _ b: CGFloat, _ t: CGFloat) -> CGFloat { a + (b - a) * t }
+
+/// Card collapse 0 (floating card) … 1 (flat header) for `offset` points scrolled past `start`.
+func collapseProgress(offset: CGFloat, start: CGFloat, distance: CGFloat) -> CGFloat {
+    distance > 0 ? min(max((offset - start) / distance, 0), 1) : 0
+}
+
+/// Tabs, chart and range chips fade out faster than the card shrinks: gone at t ≈ 0.556.
+func bodyOpacity(_ t: CGFloat) -> CGFloat { max(0, min(1, 1 - t * 1.8)) }
+
 /// Presentational pocket card (Figma 6367:67486 / cash 6367:67524). Takes values only, never the store,
 /// so it can be dropped into a horizontal pager as-is.
 struct PocketCard: View {
     let pocket: Pocket
+    var collapse: CGFloat = 0
     var onChartHeld: (Bool) -> Void = { _ in }
     @State private var tab = 0
-    @State private var scrub: Int?
+    @GestureState private var scrub: Int?
+
+    static let expandedHeight: CGFloat = 405
+    // Collapsed: 12 top + 20 title + 4 gap + 29 balance + 12 bottom.
+    static let collapsedHeight: CGFloat = 77
     @State private var range = "1W"
 
     private static let ranges = ["1W", "MTD", "1M", "3M", "YTD", "1Y", "All"]
     private var isCash: Bool { pocket.history.isEmpty }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 32) {
+        let t = collapse, fade = bodyOpacity(collapse)
+        let radius = lerp(40, 0, t)
+        VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(pocket.title).font(.bodyXXL)
                 Spacer()
@@ -22,22 +39,32 @@ struct PocketCard: View {
                     Image(systemName: "ellipsis").rotationEffect(.degrees(90)).frame(width: 24, height: 24)
                 }
             }
-            VStack(alignment: .leading, spacing: 0) {
-                VStack(alignment: .leading, spacing: 16) {
-                    tabs
-                    balance
-                }
-                if !isCash { today }
-            }
+            .frame(height: lerp(24, 20, t))
+            tabs
+                .frame(height: lerp(24, 0, t), alignment: .top)
+                .opacity(fade)
+                .padding(.top, lerp(32, 4, t))
+                .padding(.bottom, lerp(16, 0, t))
+            balance.frame(height: 29)
             Group {
-                if isCash { currencies } else { chart }
+                if !isCash { today }
+                Group {
+                    if isCash { currencies } else { chart }
+                }
+                .padding(.top, 32)
+                .frame(maxHeight: .infinity, alignment: .bottom)
             }
-            .frame(maxHeight: .infinity, alignment: .bottom)
+            .opacity(fade)
+            .allowsHitTesting(t == 0)
         }
+        // Body keeps its expanded layout and is cut off by the shrinking frame below, so nothing reflows mid-scroll.
+        .frame(height: Self.expandedHeight - 48, alignment: .top)
         .foregroundStyle(Color.textPrimary)
-        .padding(24)
-        .frame(height: 405)
-        .background(.white, in: .rect(cornerRadius: 40))
+        .padding(.horizontal, 24)
+        .padding(.top, lerp(24, 12, t))
+        .frame(height: lerp(Self.expandedHeight, Self.collapsedHeight, t), alignment: .top)
+        .background(.white, in: .rect(cornerRadius: radius))
+        .clipShape(.rect(cornerRadius: radius))
     }
 
     private var tabs: some View {
@@ -107,21 +134,20 @@ struct PocketCard: View {
                 }
             }
             .frame(height: 139)
-            // Scrubber: touch-down immediately claims the gesture and tells the pager to stop paging.
+            // Scrubber: press-and-hold, then drag. A quick swipe fails the long press, so the outer vertical scroll
+            // (and the pager) still move when a drag starts on the chart. GestureState resets on cancel too.
             .chartOverlay { proxy in
                 Color.clear.contentShape(.rect).gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { drag in
+                    LongPressGesture(minimumDuration: 0.2)
+                        .sequenced(before: DragGesture(minimumDistance: 0))
+                        .updating($scrub) { value, scrub, _ in
+                            guard case .second(true, let drag?) = value else { return }
                             scrub = proxy.value(atX: drag.location.x, as: Int.self)
                                 .map { min(max($0, 0), pocket.history.count - 1) }
-                            onChartHeld(true)
-                        }
-                        .onEnded { _ in
-                            scrub = nil
-                            onChartHeld(false)
                         }
                 )
             }
+            .onChange(of: scrub != nil) { _, held in onChartHeld(held) }
             // Labels sit 3pt above each gridline, overlapping the plot as in Figma; Charts' .inset preset drops the top one.
             .overlay(alignment: .topTrailing) {
                 VStack(alignment: .trailing, spacing: 56) {

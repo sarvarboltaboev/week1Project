@@ -3,12 +3,35 @@ import SwiftUI
 /// Home / portfolio screen (Figma 6367:67475).
 struct HomeView: View {
     @State private var store = PortfolioStore()
+    @State private var scrollY: CGFloat = 0
+    @State private var toolbarHeight: CGFloat = 0
+
+    /// How far the card has been pushed past the viewport top; it pins there by offsetting down by this much.
+    private var pin: CGFloat { max(0, scrollY - toolbarHeight) }
+    private var collapse: CGFloat {
+        collapseProgress(offset: pin, start: 0, distance: PocketCard.expandedHeight - PocketCard.collapsedHeight)
+    }
+    /// Page grey rises to white with the same progress, meeting the white header.
+    private var pageGrey: Color { .surfaceGrey30.mix(with: .white, by: collapse) }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                toolbar
-                PocketCarousel(pockets: store.pockets, selectedID: store.selectedPocketID, onSettle: store.select)
+                toolbar.onGeometryChange(for: CGFloat.self) { $0.size.height } action: { toolbarHeight = $0 }
+                // Layout always reserves the expanded height; the pager draws over it. While pinned it shrinks exactly
+                // as fast as we scroll, so its bottom tracks this spacer's bottom: no jump, no layout feedback loop.
+                Color.clear.frame(height: PocketCard.expandedHeight)
+                    .overlay(alignment: .top) {
+                        PocketCarousel(
+                            pockets: store.pockets, selectedID: store.selectedPocketID,
+                            collapse: collapse, onSettle: store.select
+                        )
+                        .frame(height: lerp(PocketCard.expandedHeight, PocketCard.collapsedHeight, collapse))
+                        // Covers content scrolling up into the status bar above the pinned header.
+                        .background(alignment: .top) { pageGrey.frame(height: pin).offset(y: -pin) }
+                        .offset(y: pin)
+                    }
+                    .zIndex(1)
                 pocketChips.padding(.top, 22)
                 actions.padding(.top, 31)
                 HoldingsSection(holdings: store.holdings)
@@ -18,7 +41,7 @@ struct HomeView: View {
             .background(alignment: .top) {
                 // Figma "gradient" 6367:67477: grey fading to white behind cards, chips and actions.
                 LinearGradient(
-                    stops: [.init(color: .surfaceGrey30, location: 0.575), .init(color: .white, location: 0.78)],
+                    stops: [.init(color: pageGrey, location: 0.575), .init(color: .white, location: 0.78)],
                     startPoint: .top, endPoint: .bottom
                 )
                 // Figma's 811pt layer starts at the screen top; ours starts below the status bar, hence 770 / shifted stops.
@@ -26,8 +49,9 @@ struct HomeView: View {
             }
             .background { Color.white }
         }
+        .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { scrollY = $1 }
         // Grey above the content (status bar, pull-down), white below for bottom bounce.
-        .background { VStack(spacing: 0) { Color.surfaceGrey30; Color.white }.ignoresSafeArea() }
+        .background { VStack(spacing: 0) { pageGrey; Color.white }.ignoresSafeArea() }
         .safeAreaInset(edge: .bottom, spacing: 0) { tabBar }
     }
 

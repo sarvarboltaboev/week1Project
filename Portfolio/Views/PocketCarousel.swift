@@ -18,12 +18,12 @@ struct PocketCarousel: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            // ponytail: cards share PocketCard's fixed 405pt height, so the pager is just as tall; top alignment
+            // ponytail: cards share PocketCard's height (fixed per collapse), so the pager is just as tall; top alignment
             // keeps it correct if a card ever gets shorter. Measure max card height if heights become dynamic.
             LazyHStack(alignment: .top, spacing: 0) {
                 ForEach(pockets) { pocket in
-                    PocketCard(pocket: pocket, onChartHeld: { chartHeld = $0 })
-                        .padding(.horizontal, 12)
+                    PocketCard(pocket: pocket, collapse: collapse, onChartHeld: { chartHeld = $0 })
+                        .padding(.horizontal, lerp(12, 0, collapse))
                         .containerRelativeFrame(.horizontal)
                         // Runs per frame off the scroll offset: no body re-evaluation, no animation.
                         // SwiftUI opacity fades the composited layer, so overlapping subviews don't show through.
